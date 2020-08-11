@@ -17,10 +17,11 @@
 *     8. Update the Device Preferences
 *         tvPairingKey = (TV Pairing Key from step 7)
 *     9. In SmartThings (Classic) navigate to the Device UI and press the Refresh button
+*    10. Install Pollster (https://github.com/statusbits/smartthings/blob/master/Pollster.md) and configure the Device to poll every 5 minutes
 */
 
 metadata {
-    definition (name: "LG UDAP 2.0 (Netcast) TV", namespace: "Brasel", author: "Josh Brasel"){
+    definition (name: "LG UDAP 2.0 (Netcast) TV (v1.1)", namespace: "Brasel", author: "Josh Brasel"){
         capability "Switch"
         capability "Polling"
         capability "Refresh"
@@ -167,7 +168,6 @@ metadata {
             "blueButton",
             "greenButton",
             "downButton",
-            //"emptyButtonLarge",
             "showKeyButton",
             "redButton",
             "yellowButton"])
@@ -180,23 +180,17 @@ metadata {
     }
 }
 
-/* Method is called automatically when installed */
+// Method is called automatically when installed
 def installed(){
     resetState()
 }
 
-/* Method is called automatically when preferences are updated */
+// Method is called automatically when preferences are updated
 def updated(){
     resetState()
 }
 
-/* Method is called automatically when preferences are updated */
-def refresh(){
-    setConfiguration()
-    poll()
-}
-
-/* Method is called automatically every 5 minutes */
+// Method is called automatically approximately every 5 minutes (by Pollster)
 def poll(){
     state.tvPollCount = (state.tvPollCount + 1)
     pollTV()
@@ -207,6 +201,20 @@ def poll(){
     }
 }
 
+// Method is called automatically as a result of calling HubAction(), unless a callback is assigned
+def parse(description){
+    Map response = parseLanMessage(description)
+
+    if (response){
+        parseResponse(response)
+    }
+}
+
+def refresh(){
+    setConfiguration()
+    poll()
+}
+
 def pollTV(){
     getPowerStatus([callback: pollGetPowerStatusCallBack])
 }
@@ -214,15 +222,6 @@ def pollTV(){
 def pollTVNoPowerStatus(){
     getVolumeInformation([:])
     getContextInformation([:])
-}
-
-/* Method is called automatically as a result of calling HubAction(), unless a callback is assigned */
-def parse(description){
-    Map response = parseLanMessage(description)
-
-    if (response){
-        parseResponse(response)
-    }
 }
 
 def on(){
